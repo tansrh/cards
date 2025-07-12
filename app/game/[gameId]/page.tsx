@@ -426,7 +426,7 @@ export default function GamePage() {
                   const selectedInStack = suitCards.some(card => selectedCard === card);
                   // The selected card in this stack, if any
                   const selectedCardInStack = suitCards.find(card => selectedCard === card);
-                  // --- New logic for tick enablement ---
+                  // --- Strict Call Break rule: must follow lead suit if possible ---
                   let isTickDisabled = false;
                   if (submissionForRound.current === round) {
                     isTickDisabled = true;
@@ -434,8 +434,8 @@ export default function GamePage() {
                     if (leadSuit) {
                       const hasLeadSuit = cards.some(card => card.endsWith(leadSuit));
                       if (hasLeadSuit) {
-                        // Only allow tick for leadSuit or trumpSuit
-                        if (suit !== leadSuit && suit !== trumpSuit) {
+                        // Only allow tick for leadSuit
+                        if (suit !== leadSuit) {
                           isTickDisabled = true;
                         }
                       } else {
