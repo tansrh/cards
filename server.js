@@ -41,24 +41,41 @@ app.prepare().then(async () => {
     let leadSuit = null;
     let maxCard = null;
     let winner = null;
-    for (const [user, card] of Object.entries(played)) {
+    // Build an array to preserve play order
+    const playOrder = Object.entries(played);
+    // Determine lead suit from the first card played
+    for (let i = 0; i < playOrder.length; i++) {
+      const [user, card] = playOrder[i];
       const match = card.match(/^(\d+|A|J|Q|K)([♠♥♦♣])$/);
       if (!match) continue;
       const [_, rank, suit] = match;
-      if (!leadSuit) leadSuit = suit;
+      if (i === 0) leadSuit = suit;
       // Rank order for Call Break
       const rankOrder = { A: 14, K: 13, Q: 12, J: 11, '10': 10, '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2 };
       const value = rankOrder[rank] || parseInt(rank);
-      // Trump beats all, else highest of lead suit
       if (!maxCard) {
         maxCard = { user, suit, value, card };
         winner = user;
-      } else if (suit === trumpSuit && maxCard.suit !== trumpSuit) {
-        maxCard = { user, suit, value, card };
-        winner = user;
-      } else if (suit === maxCard.suit && value > maxCard.value && (suit === leadSuit || suit === trumpSuit)) {
-        maxCard = { user, suit, value, card };
-        winner = user;
+      } else {
+        // If current card is trump and maxCard is not trump, trump wins
+        if (suit === trumpSuit && maxCard.suit !== trumpSuit) {
+          maxCard = { user, suit, value, card };
+          winner = user;
+        }
+        // If both are trump, higher value wins
+        else if (suit === trumpSuit && maxCard.suit === trumpSuit && value > maxCard.value) {
+          maxCard = { user, suit, value, card };
+          winner = user;
+        }
+        // If both are lead suit, higher value wins
+        else if (suit === leadSuit && maxCard.suit === leadSuit && value > maxCard.value) {
+          maxCard = { user, suit, value, card };
+          winner = user;
+        }
+        // If maxCard is lead suit and current card is not lead suit or trump, do nothing
+        // If current card is not lead suit or trump, it cannot win
+        // If player does not have lead suit, they can play any card, including trump
+        // (Handled by above trump logic)
       }
     }
     return winner;
@@ -147,12 +164,23 @@ app.prepare().then(async () => {
       if (!gameState[gameId].played[round]) {
         gameState[gameId].played[round] = {};
       }
-      gameState[gameId].played[round][socket.id] = card;
+      const playedThisRound = gameState[gameId].played[round];
+      const isFirstCard = Object.keys(playedThisRound).length === 0;
+      playedThisRound[socket.id] = card;
+      // If this is the first card played in the round, determine and emit the lead suit
+      if (isFirstCard) {
+        const match = card.match(/^(\d+|A|J|Q|K)([♠♥♦♣])$/);
+        console.log(match, "Tanujkkkmatch")
+        if (match) {
+          const leadSuit = match[2];
+          io.to(gameId).emit('leadSuit', leadSuit);
+        }
+      }
       console.log(`User ${socket.id} played card ${card} in game ${gameId}, round ${round}`);
       io.to(gameId).emit('cardPlayed', { user: socket.id, card, round });
       // Optionally: check if all players have played for this round, then emit 'roundEnd'
       const clients = Array.from(io.sockets.adapter.rooms.get(gameId) || []);
-      if (Object.keys(gameState[gameId].played[round]).length === gameState[gameId].numPlayers) {
+      if (Object.keys(playedThisRound).length === gameState[gameId].numPlayers) {
         // io.to(gameId).emit('roundEnd', { round });
         // --- Call Break round winner logic ---
         if (!gameState[gameId].roundsWon) gameState[gameId].roundsWon = {};

@@ -24,6 +24,18 @@ export default function GamePage() {
   const [playedCards, setPlayedCards] = useState<Record<string, string>>({});
   const [round, setRound] = useState(0);
   const [trumpSuit, setTrumpSuit] = useState<string | null>(null);
+  const [leadSuit, setLeadSuit] = useState<string | null>(null);
+  // Listen for leadSuit from server
+  useEffect(() => {
+    if (!socketRef.current) return;
+    function handler(suit: string | null) {
+      setLeadSuit(suit);
+    }
+    socketRef.current.on('leadSuit', handler);
+    return () => {
+      socketRef.current?.off('leadSuit', handler);
+    };
+  }, [socketRef.current]);
   const [showRoundModal, setShowRoundModal] = useState(false);
   const [roundModalText, setRoundModalText] = useState("");
   const [showLoaderModal, setShowLoaderModal] = useState(false);
@@ -326,15 +338,26 @@ export default function GamePage() {
           {/* Center top: played cards for this round */}
           {round>0  && (
             <div className="absolute top-14 left-1/2 -translate-x-1/2 flex gap-6 z-10">
-              {Array.isArray(players) && players.length && players.map(u => (
-                <div key={u.id} className="flex flex-col items-center">
-                  <div className="w-16 h-24 rounded-lg border-2 border-orange-400 bg-black flex items-center justify-center text-3xl font-bold text-white">
-                    {/* Show played card if submitted for this round, else empty */}
-                    {playedCards && playedCards[u.id] ? playedCards[u.id] : ''}
+              {Array.isArray(players) && players.length && players.map(u => {
+                const card = playedCards && playedCards[u.id] ? playedCards[u.id] : '';
+                // Determine suit for color
+                const suit = card ? card.slice(-1) : '';
+                // Use same bg/text color logic as below
+                let cardBg = 'bg-black text-white';
+                if (suit === '♥') cardBg = 'bg-red-600 text-white';
+                else if (suit === '♦') cardBg = 'bg-orange-300 text-black';
+                else if (suit === '♣') cardBg = 'bg-green-700 text-white';
+                // Spades and default: bg-black text-white
+                return (
+                  <div key={u.id} className="flex flex-col items-center">
+                    <div className={`w-16 h-24 rounded-lg border-2 border-orange-400 flex items-center justify-center text-3xl font-bold shadow-lg ${cardBg}`}>
+                      {/* Show played card if submitted for this round, else empty */}
+                      {card}
+                    </div>
+                    <span className="mt-1 text-xs text-orange-200 max-w-[4rem] truncate scroll-auto">{u.name}</span>
                   </div>
-                  <span className="mt-1 text-xs text-orange-200 max-w-[4rem] truncate scroll-auto">{u.name}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
           {(!distributed && isPlayer) ? (
@@ -347,6 +370,7 @@ export default function GamePage() {
           // Calculate tallest stack
           const suits = ['♠', '♥', '♦', '♣'];
           const cardOffset = 40; // px (translateY per card)
+          console.log(leadSuit, trumpSuit, round, submissionForRound.current, "tanujkkk");
           return (
             <div
               className="absolute left-0 w-full flex justify-center pb-8 bottom-0"
@@ -396,20 +420,35 @@ export default function GamePage() {
                   const selectedInStack = suitCards.some(card => selectedCard === card);
                   // The selected card in this stack, if any
                   const selectedCardInStack = suitCards.find(card => selectedCard === card);
-                  const isDisabled = (submissionForRound.current === round) ? true : (selectedCardInStack ? false : true);
+                  // Determine if tick should be disabled (blurred) for this suit
+                  let isTickDisabled = false;
+                  if (submissionForRound.current === round) {
+                    isTickDisabled = true;
+                  } else if (selectedCardInStack) {
+                    if (leadSuit) {
+                      // Only allow tick for leadSuit or trumpSuit
+                      if (suit !== leadSuit && suit !== trumpSuit) {
+                        isTickDisabled = true;
+                      }
+                    } else {
+                      // No leadSuit, allow any
+                      isTickDisabled = false;
+                    }
+                  } else {
+                    isTickDisabled = true;
+                  }
+                  // Blur effect for disabled tick
+                  const tickBlurClass = isTickDisabled ? 'opacity-40 blur-[2px] cursor-not-allowed' : '';
                   return (
-                    // <div key={suit} className="relative" style={{ height: `${stackHeight}px`, width: '5rem' }}>
                     <div key={suit} className="relative" style={{ height: '100%', width: '5rem' }}>
-                      {/* Tick/Cross above the stack, enabled only if a card in this stack is selected */}
-                      {/* <div className="absolute left-1/2 -translate-x-1/2 top-[-2.5rem] flex flex-row items-center gap-3 z-30"> */}
                       <div className=" flex flex-row items-center gap-3 z-30 mb-2">
                         <button
-                          className={`rounded-full bg-green-600 hover:bg-green-700 text-white w-8 h-8 flex items-center justify-center text-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-green-300 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          className={`rounded-full bg-green-600 hover:bg-green-700 text-white w-8 h-8 flex items-center justify-center text-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-green-300 ${tickBlurClass}`}
                           title="Submit this card"
-                          disabled={isDisabled}
+                          disabled={isTickDisabled}
                           onClick={e => {
                             e.stopPropagation();
-                            if (selectedCardInStack) submitCard(selectedCardInStack);
+                            if (!isTickDisabled && selectedCardInStack) submitCard(selectedCardInStack);
                           }}
                         >
                           ✓
