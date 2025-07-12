@@ -170,7 +170,6 @@ app.prepare().then(async () => {
       // If this is the first card played in the round, determine and emit the lead suit
       if (isFirstCard) {
         const match = card.match(/^(\d+|A|J|Q|K)([♠♥♦♣])$/);
-        console.log(match, "Tanujkkkmatch")
         if (match) {
           const leadSuit = match[2];
           io.to(gameId).emit('leadSuit', leadSuit);
@@ -197,7 +196,7 @@ app.prepare().then(async () => {
           roundsWon: gameState[gameId].roundsWon
         });
         // If last round, emit game results and store them
-        if (round >= (gameState[gameId].totalRounds || 1) || round == 2) {
+        if (round >= (gameState[gameId].totalRounds || 1)) {
           // Collect all played cards per user for all rounds
           const results = {};
           for (let r = 1; r <= round; r++) {

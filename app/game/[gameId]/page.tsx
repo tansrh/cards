@@ -370,7 +370,6 @@ export default function GamePage() {
           // Calculate tallest stack
           const suits = ['♠', '♥', '♦', '♣'];
           const cardOffset = 40; // px (translateY per card)
-          console.log(leadSuit, trumpSuit, round, submissionForRound.current, "tanujkkk");
           return (
             <div
               className="absolute left-0 w-full flex justify-center pb-8 bottom-0"
