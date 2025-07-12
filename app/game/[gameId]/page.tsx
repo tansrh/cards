@@ -1,5 +1,5 @@
 "use client"
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { ThemeButton } from "../../_components/ThemeButton";
@@ -20,7 +20,7 @@ export default function GamePage() {
   const [dragging, setDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [startWidth, setStartWidth] = useState(320);
-  const [bottomRef, setBottomRef] = useState(0);
+  // removed unused bottomRef, setBottomRef
   const [playedCards, setPlayedCards] = useState<Record<string, string>>({});
   const [round, setRound] = useState(0);
   const [trumpSuit, setTrumpSuit] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export default function GamePage() {
   const [roundModalText, setRoundModalText] = useState("");
   const [showLoaderModal, setShowLoaderModal] = useState(false);
   const [showGameResults, setShowGameResults] = useState(false);
-  const [resetGame, setResetGame] = useState(true);
+  // removed unused resetGame, setResetGame
   const resetGameRef = useRef(true);
  useEffect(() => {
     console.log("Reset game effect triggered:", showGameResults, resetGameRef.current);
@@ -43,10 +43,13 @@ export default function GamePage() {
     }
     resetGameRef.current = true;
   }, [showGameResults]);
-  const [isPlayer, setIsPlayer] = useState(socketRef.current && players?.some(p => p.id === socketRef?.current?.id));
-  const [gameResults, setGameResults] = useState<any>(null);
+  const isPlayer = socketRef.current && players?.some(p => p.id === socketRef?.current?.id);
+  interface GameResults {
+    results: Record<string, string[]>;
+    roundsWon?: Record<string, number>;
+  }
+  const [gameResults, setGameResults] = useState<GameResults | null>(null);
   const name = getCookie('cardsPlayerName');
-  const theme = getCookie('cardsTheme');
   const submissionForRound = useRef(-1);
   const cardsDealtTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [darkMode, setDarkMode] = useState(() => {
@@ -214,7 +217,7 @@ export default function GamePage() {
   // --- Listen for played cards from server ---
   useEffect(() => {
     if (!socketRef.current) return;
-    function handler(data: any) {
+    function handler(data: { user: string; card: string }) {
       setPlayedCards(prev => ({ ...prev, [data.user]: data.card }));
     }
     socketRef.current.on('cardPlayed', handler);
@@ -241,7 +244,7 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!socketRef.current) return;
-    function handler(data: any) {
+    function handler(data: GameResults) {
       console.log("Game results received:", data);
       setGameResults(data);
       // Play victory sound (local file)
@@ -257,7 +260,7 @@ export default function GamePage() {
     return () => {
       socketRef.current?.off('gameResults', handler);
     };
-  }, [socketRef.current]);
+  }, []);
   return (
     <div className={`flex h-screen w-screen max-h-screen max-w-screen overflow-hidden transition-colors duration-300 ${darkMode ? 'bg-gradient-to-br from-black to-orange-900' : 'bg-gradient-to-br from-amber-100 to-orange-200'}`}>
       {/* Main game area */}
@@ -343,14 +346,7 @@ export default function GamePage() {
         {distributed && (() => {
           // Calculate tallest stack
           const suits = ['♠', '♥', '♦', '♣'];
-
-          const cardHeight = 96; // px (h-24)
           const cardOffset = 40; // px (translateY per card)
-          const maxStack = Math.max(...suits.map(suit => cards.filter(card => card.endsWith(suit)).length), 1);
-          const stackHeight = maxStack > 1 ? ((maxStack - 1) * cardOffset + cardHeight) : cardHeight;
-          // Convert 100vh to px and subtract stackHeight to get the top offset
-          const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 700;
-          const topPx = viewportHeight - (maxStack * 40) - 80;
           return (
             <div
               className="absolute left-0 w-full flex justify-center pb-8 bottom-0"
