@@ -2,8 +2,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { io, Socket } from "socket.io-client";
-import { getCookie } from "@/utils";
-import { ThemeButton } from "@/app/_components/ThemeButton";
+import { ThemeButton } from "../../_components/ThemeButton";
+import { getCookie } from "../../../utils";
 export default function GamePage() {
   const params = useParams();
   const gameId = params.gameId;

@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { getCookie } from '@/utils';
+import { getCookie } from '../utils';
 import { ThemeButton } from './_components/ThemeButton';
 
 // Modern form status hook
