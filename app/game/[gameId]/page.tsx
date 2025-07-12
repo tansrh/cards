@@ -245,7 +245,7 @@ export default function GamePage() {
     if (!socketRef.current) return;
     function handler() {
       if (roundResultTimeoutRef.current) clearTimeout(roundResultTimeoutRef.current);
-      roundResultTimeoutRef.current = setTimeout(() => setPlayedCards({}), 2000);
+      roundResultTimeoutRef.current = setTimeout(() => {setPlayedCards({}); setLeadSuit(null);}, 2000);
     }
     socketRef.current.on('roundResult', handler);
     return () => {
