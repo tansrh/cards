@@ -16,6 +16,13 @@ export default function GamePage() {
   const [distributed, setDistributed] = useState(false);
   const [chatWidth, setChatWidth] = useState(320);
   const chatRef = useRef<HTMLDivElement>(null);
+  const chatMessagesRef = useRef<HTMLDivElement>(null);
+  // Scroll chat to bottom when messages change
+  useEffect(() => {
+    if (chatMessagesRef.current) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+    }
+  }, [messages]);
   const socketRef = useRef<Socket | null>(null);
   const [dragging, setDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -509,7 +516,10 @@ export default function GamePage() {
           className="absolute left-0 top-0 h-full w-2 cursor-ew-resize z-20"
           onMouseDown={handleMouseDown}
         />
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div
+          ref={chatMessagesRef}
+          className="flex-1 overflow-y-auto p-4 space-y-2"
+        >
           {messages.map((msg, idx) => {
             const isCurrentUser = (msg.userId === socketRef.current?.id) || msg.user.split(" ")?.[1]?.includes(socketRef.current?.id || '');
             return (
