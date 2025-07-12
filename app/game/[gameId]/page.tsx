@@ -426,15 +426,21 @@ export default function GamePage() {
                   const selectedInStack = suitCards.some(card => selectedCard === card);
                   // The selected card in this stack, if any
                   const selectedCardInStack = suitCards.find(card => selectedCard === card);
-                  // Determine if tick should be disabled (blurred) for this suit
+                  // --- New logic for tick enablement ---
                   let isTickDisabled = false;
                   if (submissionForRound.current === round) {
                     isTickDisabled = true;
                   } else if (selectedCardInStack) {
                     if (leadSuit) {
-                      // Only allow tick for leadSuit or trumpSuit
-                      if (suit !== leadSuit && suit !== trumpSuit) {
-                        isTickDisabled = true;
+                      const hasLeadSuit = cards.some(card => card.endsWith(leadSuit));
+                      if (hasLeadSuit) {
+                        // Only allow tick for leadSuit or trumpSuit
+                        if (suit !== leadSuit && suit !== trumpSuit) {
+                          isTickDisabled = true;
+                        }
+                      } else {
+                        // No cards of lead suit, allow any
+                        isTickDisabled = false;
                       }
                     } else {
                       // No leadSuit, allow any
