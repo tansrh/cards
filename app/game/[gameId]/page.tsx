@@ -368,7 +368,7 @@ export default function GamePage() {
             </div>
           )}
           {(!distributed && isPlayer) ? (
-            <div className="text-orange-200 text-lg">Waiting for cards to be distributed...</div>
+            <div className={`text-lg ${darkMode ? 'text-orange-200' : 'text-orange-800 font-semibold'}`}>Waiting for cards to be distributed...</div>
           ) : <></>}
         </div>
 
