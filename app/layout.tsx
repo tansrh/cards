@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PLay Callbreak Online",
+  title: "Play Callbreak Online",
   description: "CallBreak",
 };
 
